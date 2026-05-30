@@ -2021,3 +2021,70 @@ def visualizar_pdf(numero: str):
         media_type="application/pdf",
         filename=f"{numero}.pdf"
     )
+
+
+# =========================
+# API PARA APP MOBILE
+# =========================
+
+@app.get("/api/status")
+def api_status():
+
+    return {
+        "status": "online",
+        "sistema": "RDV",
+        "mensagem": "API funcionando"
+    }
+
+
+@app.get("/api/clientes")
+def api_clientes():
+
+    db = SessionLocal()
+
+    try:
+
+        clientes = db.query(Cliente).filter(
+            Cliente.ativo == 1
+        ).all()
+
+        return [
+            {
+                "id": cliente.id,
+                "nome": cliente.nome,
+                "telefone": cliente.telefone,
+                "cnpj": cliente.cnpj,
+                "endereco": cliente.endereco
+            }
+            for cliente in clientes
+        ]
+
+    finally:
+
+        db.close()
+
+
+@app.get("/api/torres")
+def api_torres():
+
+    db = SessionLocal()
+
+    try:
+
+        torres = db.query(Torre).all()
+
+        return [
+            {
+                "id": torre.id,
+                "nome": torre.nome,
+                "cliente_id": torre.cliente_id,
+                "numero_serie": torre.numero_serie,
+                "qtd_litros": torre.qtd_litros,
+                "foto_perfil": torre.foto_perfil
+            }
+            for torre in torres
+        ]
+
+    finally:
+
+        db.close()
