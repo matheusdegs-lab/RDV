@@ -368,6 +368,120 @@ if not admin_existe:
 
 db.close()
 
+def gerar_backup_diario():
+
+    if not supabase:
+        print("Supabase não configurado. Backup ignorado.")
+        return
+
+    db = SessionLocal()
+
+    try:
+
+        backup = {
+            "data_backup": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+
+            "usuarios": [
+                {
+                    "id": u.id,
+                    "usuario": u.usuario,
+                    "senha": u.senha,
+                    "admin": u.admin,
+                    "pode_clientes": u.pode_clientes,
+                    "pode_colaborador": u.pode_colaborador,
+                    "ativo": u.ativo,
+                    "cliente_id": u.cliente_id
+                }
+                for u in db.query(Usuario).all()
+            ],
+
+            "clientes": [
+                {
+                    "id": c.id,
+                    "nome": c.nome,
+                    "telefone": c.telefone,
+                    "cnpj": c.cnpj,
+                    "endereco": c.endereco,
+                    "ativo": c.ativo
+                }
+                for c in db.query(Cliente).all()
+            ],
+
+            "torres": [
+                {
+                    "id": t.id,
+                    "nome": t.nome,
+                    "cliente_id": t.cliente_id,
+                    "numero_serie": t.numero_serie,
+                    "qtd_litros": t.qtd_litros,
+                    "foto_perfil": t.foto_perfil
+                }
+                for t in db.query(Torre).all()
+            ],
+
+            "relatorios": [
+                {
+                    "id": r.id,
+                    "numero": r.numero,
+                    "cliente": r.cliente,
+                    "torre": r.torre,
+                    "tecnico": r.tecnico,
+                    "observacoes": r.observacoes,
+                    "assinatura": r.assinatura,
+                    "foto": r.foto,
+                    "data_criacao": r.data_criacao,
+                    "status": r.status,
+                    "hash_relatorio": r.hash_relatorio
+                }
+                for r in db.query(Relatorio).all()
+            ],
+
+            "historico_relatorios": [
+                {
+                    "id": h.id,
+                    "relatorio_id": h.relatorio_id,
+                    "usuario": h.usuario,
+                    "alteracao": h.alteracao,
+                    "valor_antigo": h.valor_antigo,
+                    "valor_novo": h.valor_novo,
+                    "data_hora": h.data_hora
+                }
+                for h in db.query(HistoricoRelatorio).all()
+            ]
+        }
+
+        nome_backup = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        caminho_backup = f"/tmp/{nome_backup}"
+
+        with open(caminho_backup, "w", encoding="utf-8") as f:
+            json.dump(backup, f, ensure_ascii=False, indent=2)
+
+        upload_storage(
+            "backups",
+            caminho_backup,
+            nome_backup
+        )
+
+        print("Backup enviado para Supabase Storage:", nome_backup)
+
+    except Exception as e:
+
+        print("Erro ao gerar backup:", e)
+
+    finally:
+
+        db.close()
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(
+    gerar_backup_diario,
+    "cron",
+    hour=3,
+    minute=0
+)
+scheduler.start()
+
 # =========================
 # LOGIN PAGE
 # =========================
