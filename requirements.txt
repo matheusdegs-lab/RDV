@@ -6,3 +6,5 @@ python-multipart
 reportlab
 passlib[bcrypt]
 psycopg2-binary
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
