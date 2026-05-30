@@ -1,0 +1,756 @@
+{% extends "layout.html" %}
+
+{% block conteudo %}
+
+<h2 class="mb-4">
+<i class="fa-solid fa-user-plus"></i>
+Novo usuário
+</h2>
+
+<p style="color:#cbd5e1;margin-top:-10px;margin-bottom:25px;">
+Cadastre usuários e defina permissões de acesso.
+</p>
+
+<form method="post" id="formUsuario" onsubmit="return validarFormularioUsuario()">
+
+<div class="row">
+
+<div class="col-md-4">
+
+<label>Usuário</label>
+
+<input
+name="usuario"
+id="usuario"
+placeholder="Digite o usuário"
+class="form-control"
+required>
+
+<div
+id="erro_usuario"
+style="color:#f87171;font-size:14px;margin-top:6px;{% if erro != 'usuario_existente' %}display:none;{% endif %}"
+>
+E-mail já cadastrado
+</div>
+
+</div>
+
+<div class="col-md-4">
+
+<label>Senha</label>
+
+<input
+name="senha"
+id="senha"
+type="password"
+placeholder="Digite a senha"
+class="form-control"
+required>
+
+</div>
+
+<div class="col-md-4">
+
+<label>Confirmar senha</label>
+
+<input
+name="confirmar"
+id="confirmar"
+type="password"
+placeholder="Confirme a senha"
+class="form-control"
+required>
+
+<div
+id="erro_senha"
+style="color:#f87171;font-size:14px;margin-top:6px;{% if erro != 'senhas' %}display:none;{% endif %}"
+>
+Senhas não conferem
+</div>
+
+</div>
+
+</div>
+
+<div class="mt-4">
+
+<h5>
+<i class="fa-solid fa-shield-halved"></i>
+Permissões do usuário
+</h5>
+
+<div class="row mt-3">
+
+<div class="col-md-4 col-12 mb-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+value="1"
+name="admin"
+id="admin">
+
+Administrador
+
+<br>
+
+<small style="color:#94a3b8">
+Acesso total
+</small>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-4 col-12 mb-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+value="1"
+name="pode_clientes"
+id="pode_clientes">
+
+Clientes
+
+<br>
+
+<small style="color:#94a3b8">
+Visualizar e baixar relatórios
+</small>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-4 col-12 mb-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+value="1"
+name="pode_colaborador"
+id="pode_colaborador">
+
+Colaborador
+
+<br>
+
+<small style="color:#94a3b8">
+Criar relatórios, clientes e torres
+</small>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="row mt-2" id="area_cliente_vinculado" style="display:none;">
+
+<div class="col-md-4 col-12 mb-3">
+
+<label>Cliente vinculado</label>
+
+<select
+name="cliente_id"
+id="cliente_id"
+class="form-control"
+>
+
+<option value="0">Selecione o cliente</option>
+
+{% for cliente in clientes %}
+<option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+{% endfor %}
+
+</select>
+
+<small style="color:#94a3b8">Obrigatório somente para usuário Cliente.</small>
+
+</div>
+
+</div>
+
+<button class="btn btn-success mt-4">
+
+<i class="fa-solid fa-floppy-disk"></i>
+
+Salvar usuário
+
+</button>
+
+</div>
+
+</form>
+
+<hr style="
+border-color:rgba(255,255,255,.1);
+margin:40px 0;
+">
+
+<h2 class="mb-4">
+
+<i class="fa-solid fa-users"></i>
+
+Usuários cadastrados
+
+</h2>
+
+<div class="table-responsive">
+
+<table class="table">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>Usuário</th>
+<th>Cliente vinculado</th>
+<th>Admin</th>
+<th>Clientes</th>
+<th>Colaborador</th>
+<th>Ativo</th>
+<th width="220">Ações</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for u in usuarios %}
+
+<tr>
+
+<td>{{u.id}}</td>
+
+<td>{{u.usuario}}</td>
+
+<td>
+{% if u.cliente_id and clientes_dict.get(u.cliente_id) %}
+{{ clientes_dict.get(u.cliente_id) }}
+{% else %}
+-
+{% endif %}
+</td>
+
+<td>
+{% if u.admin==1 %}
+✅
+{% else %}
+❌
+{% endif %}
+</td>
+
+<td>
+{% if u.pode_clientes==1 %}
+✅
+{% else %}
+❌
+{% endif %}
+</td>
+
+<td>
+{% if u.pode_colaborador==1 %}
+✅
+{% else %}
+❌
+{% endif %}
+</td>
+
+<td>
+{% if u.ativo==1 %}
+✅
+{% else %}
+❌
+{% endif %}
+</td>
+
+<td>
+
+<button
+class="btn btn-warning btn-sm"
+data-bs-toggle="modal"
+data-bs-target="#editar{{u.id}}"
+>
+
+<i class="fa-solid fa-pen"></i>
+
+Editar
+
+</button>
+
+</td>
+
+</tr>
+
+<!-- MODAL EDITAR -->
+
+<div
+class="modal fade"
+id="editar{{u.id}}"
+tabindex="-1"
+>
+
+<div class="modal-dialog modal-lg">
+
+<div class="modal-content bg-dark text-white">
+
+<form
+method="post"
+action="/editar_usuario/{{u.id}}"
+onsubmit="return validarPermissoesEditar({{u.id}})"
+>
+
+<div class="modal-header">
+
+<h5 class="modal-title">
+Editar usuário
+</h5>
+
+<button
+type="button"
+class="btn-close btn-close-white"
+data-bs-dismiss="modal"
+></button>
+
+</div>
+
+<div class="modal-body">
+
+<div class="row">
+
+<div class="col-md-6">
+
+<label>Usuário</label>
+
+<input
+type="text"
+name="usuario"
+class="form-control mb-3"
+value="{{u.usuario}}"
+required>
+
+</div>
+
+<div class="col-md-6">
+
+<label>Nova senha</label>
+
+<input
+type="password"
+name="senha"
+class="form-control mb-3"
+placeholder="Deixe vazio para manter"
+>
+
+</div>
+
+</div>
+<div class="row mt-3">
+
+<div class="col-md-6">
+
+<label>Cliente vinculado</label>
+
+<select name="cliente_id" class="form-control mb-3">
+
+<option value="0">Selecione o cliente</option>
+
+{% for cliente in clientes %}
+<option value="{{ cliente.id }}" {% if u.cliente_id == cliente.id %}selected{% endif %}>{{ cliente.nome }}</option>
+{% endfor %}
+
+</select>
+
+<small style="color:#94a3b8">Usado para usuário com permissão Cliente.</small>
+
+</div>
+
+</div>
+
+<div class="row mt-3">
+
+<div class="col-md-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+name="admin"
+id="admin{{u.id}}"
+{% if u.admin==1 %}checked{% endif %}
+>
+
+Administrador
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+name="pode_clientes"
+id="clientes{{u.id}}"
+{% if u.pode_clientes==1 %}checked{% endif %}
+>
+
+Clientes
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+name="pode_colaborador"
+id="colaborador{{u.id}}"
+{% if u.pode_colaborador==1 %}checked{% endif %}
+>
+
+Colaborador
+
+</div>
+
+</div>
+
+</div>
+
+<!-- AQUI FOI ADICIONADO O ATIVO -->
+
+<div class="col-md-3">
+
+<div class="card-box">
+
+<div class="checkbox-group">
+
+<input
+type="checkbox"
+name="ativo"
+id="ativo{{u.id}}"
+{% if u.ativo==1 %}checked{% endif %}
+>
+
+Ativo
+
+</div>
+
+</div>
+
+</div>
+
+<!-- FIM DO ATIVO -->
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+
+<button
+type="submit"
+class="btn btn-success"
+>
+
+Salvar alterações
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+
+<div
+id="notificacaoSistema"
+style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.65);
+z-index:9999;
+align-items:center;
+justify-content:center;
+padding:20px;
+"
+>
+    <div
+    style="
+    background:#1e293b;
+    color:white;
+    width:100%;
+    max-width:420px;
+    border-radius:16px;
+    padding:28px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+    border:1px solid rgba(255,255,255,.12);
+    "
+    >
+        <div
+        style="
+        font-size:42px;
+        margin-bottom:12px;
+        color:#facc15;
+        "
+        >
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+
+        <h4 style="margin-bottom:12px;">
+            Atenção
+        </h4>
+
+        <p
+        id="textoNotificacaoSistema"
+        style="
+        color:#cbd5e1;
+        font-size:16px;
+        margin-bottom:22px;
+        "
+        ></p>
+
+        <button
+        type="button"
+        class="btn btn-primary px-4"
+        onclick="fecharNotificacaoSistema()"
+        >
+            OK
+        </button>
+    </div>
+</div>
+
+
+<script>
+
+function mostrarNotificacaoSistema(mensagem){
+
+const notificacao = document.getElementById("notificacaoSistema");
+const texto = document.getElementById("textoNotificacaoSistema");
+
+if(texto){
+    texto.innerText = mensagem;
+}
+
+if(notificacao){
+    notificacao.style.display = "flex";
+}
+
+}
+
+function fecharNotificacaoSistema(){
+
+const notificacao = document.getElementById("notificacaoSistema");
+
+if(notificacao){
+    notificacao.style.display = "none";
+}
+
+}
+
+
+function validarFormularioUsuario(){
+
+const senha = document.getElementById("senha").value;
+const confirmar = document.getElementById("confirmar").value;
+const erroSenha = document.getElementById("erro_senha");
+const erroUsuario = document.getElementById("erro_usuario");
+
+erroSenha.style.display = "none";
+
+if(erroUsuario){
+    erroUsuario.style.display = "none";
+}
+
+if(senha !== confirmar){
+
+erroSenha.style.display = "block";
+
+return false;
+}
+
+return validarPermissoes();
+}
+
+document.getElementById("confirmar").addEventListener("input", function(){
+
+const senha = document.getElementById("senha").value;
+const confirmar = document.getElementById("confirmar").value;
+const erroSenha = document.getElementById("erro_senha");
+
+if(confirmar && senha !== confirmar){
+
+erroSenha.style.display = "block";
+
+} else {
+
+erroSenha.style.display = "none";
+
+}
+
+});
+
+document.getElementById("usuario").addEventListener("input", function(){
+
+const erroUsuario = document.getElementById("erro_usuario");
+
+if(erroUsuario){
+
+erroUsuario.style.display = "none";
+
+}
+
+});
+
+function validarPermissoes(){
+
+const admin = document.getElementById("admin").checked;
+const clientes = document.getElementById("pode_clientes").checked;
+const colaborador = document.getElementById("pode_colaborador").checked;
+const clienteId = document.getElementById("cliente_id");
+const totalPermissoes = [admin, clientes, colaborador].filter(Boolean).length;
+
+if(totalPermissoes === 0){
+
+mostrarNotificacaoSistema("Selecione pelo menos uma permissão.");
+
+return false;
+}
+
+if(totalPermissoes > 1){
+
+mostrarNotificacaoSistema("Selecione somente uma permissão.");
+
+return false;
+}
+
+if(clientes && clienteId && clienteId.value == "0"){
+
+mostrarNotificacaoSistema("Selecione o cliente vinculado.");
+
+return false;
+}
+
+return true;
+}
+
+function validarPermissoesEditar(id){
+
+const admin = document.getElementById("admin" + id).checked;
+const clientes = document.getElementById("clientes" + id).checked;
+const colaborador = document.getElementById("colaborador" + id).checked;
+const totalPermissoes = [admin, clientes, colaborador].filter(Boolean).length;
+
+if(totalPermissoes === 0){
+
+mostrarNotificacaoSistema("Selecione pelo menos uma permissão.");
+
+return false;
+}
+
+if(totalPermissoes > 1){
+
+mostrarNotificacaoSistema("Selecione somente uma permissão.");
+
+return false;
+}
+
+return true;
+}
+
+function atualizarAreaClienteVinculado(){
+
+const admin = document.getElementById("admin").checked;
+const clientes = document.getElementById("pode_clientes").checked;
+const colaborador = document.getElementById("pode_colaborador").checked;
+const area = document.getElementById("area_cliente_vinculado");
+
+if(area){
+
+    if(clientes && !admin && !colaborador){
+
+        area.style.display = "block";
+
+    } else {
+
+        area.style.display = "none";
+
+        const select = document.getElementById("cliente_id");
+
+        if(select){
+
+            select.value = "0";
+
+        }
+
+    }
+
+}
+
+}
+
+["admin", "pode_clientes", "pode_colaborador"].forEach(function(id){
+
+const campo = document.getElementById(id);
+
+if(campo){
+
+    campo.addEventListener("change", atualizarAreaClienteVinculado);
+
+}
+
+});
+
+atualizarAreaClienteVinculado();
+
+</script>
+
+{% endblock %}

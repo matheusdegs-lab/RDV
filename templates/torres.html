@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+
+{% block conteudo %}
+
+<div class="card-sistema">
+
+    <h1 class="mb-4">
+        <i class="fa-solid fa-fan"></i> Cadastro de Torres
+    </h1>
+
+    <p class="texto-muted mb-4">
+        Gerencie as torres vinculadas aos clientes.
+    </p>
+
+    <form method="post" action="/torres" enctype="multipart/form-data">
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <input name="nome" class="form-control" placeholder="Nome da torre" required>
+            </div>
+
+            <div class="col-md-6">
+                <select name="cliente_id" class="form-select" required>
+                    <option value="">Selecione o cliente</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <input name="numero_serie" class="form-control" placeholder="N° de série">
+            </div>
+
+            <div class="col-md-4">
+                <input name="qtd_litros" class="form-control" placeholder="Qtd litros">
+            </div>
+
+            <div class="col-md-4">
+                <input type="file" name="foto_perfil" accept="image/*" class="form-control">
+            </div>
+
+        </div>
+
+        <button class="btn btn-success mt-3">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar Torre
+        </button>
+
+    </form>
+
+    <hr class="my-4">
+
+    <h3 class="mb-3">Torres cadastradas</h3>
+
+    {% for torre in torres %}
+
+    <div class="item-card">
+
+        <div class="d-flex gap-4 flex-wrap align-items-center justify-content-between">
+
+            <div class="d-flex gap-4 flex-wrap align-items-center">
+
+                {% if torre.foto_perfil %}
+                <img src="/uploads/{{ torre.foto_perfil }}" style="width:95px;height:95px;object-fit:cover;border-radius:50%;border:3px solid rgba(255,255,255,.15);">
+                {% endif %}
+
+                <div>
+                    <h4>{{ torre.nome }}</h4>
+                    <div class="texto-muted">Cliente: {{ clientes_dict.get(torre.cliente_id|string, '-') }}</div>
+                    <div class="texto-muted">N° de série: {{ torre.numero_serie or '-' }}</div>
+                    <div class="texto-muted">Qtd litros: {{ torre.qtd_litros or '-' }}</div>
+                </div>
+
+            </div>
+
+            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editarTorre{{ torre.id }}">
+                <i class="fa-solid fa-pen-to-square"></i> Editar torre
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="modal fade" id="editarTorre{{ torre.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="post" action="/editar_torre/{{ torre.id }}" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Torre</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label>Nome da torre</label>
+                                <input name="nome" value="{{ torre.nome }}" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label>Cliente</label>
+                                <select name="cliente_id" class="form-select" required>
+                                    {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}" {% if cliente.id == torre.cliente_id %}selected{% endif %}>{{ cliente.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>N° de série</label>
+                                <input name="numero_serie" value="{{ torre.numero_serie or '' }}" class="form-control">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>Qtd litros</label>
+                                <input name="qtd_litros" value="{{ torre.qtd_litros or '' }}" class="form-control">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>Foto da torre</label>
+                                <input type="file" name="foto_perfil" accept="image/*" class="form-control">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-success">Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

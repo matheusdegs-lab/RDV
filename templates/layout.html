@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RDV</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body{
+            margin:0;
+            background:#0f172a;
+            color:white;
+            font-family:Arial, sans-serif;
+        }
+
+        .sidebar{
+            position:fixed;
+            left:0;
+            top:0;
+            width:300px;
+            height:100vh;
+            background:#0b1628;
+            padding:30px 24px;
+            transition:.3s;
+            z-index:1000;
+        }
+
+        .sidebar.fechado{
+            left:-300px;
+        }
+
+        .brand{
+            font-size:34px;
+            font-weight:bold;
+            line-height:1.2;
+            margin-bottom:55px;
+            padding-left:36px;
+        }
+
+        .menu-link{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            color:#cbd5e1;
+            text-decoration:none;
+            padding:14px 12px;
+            border-radius:8px;
+            margin-bottom:12px;
+            font-size:18px;
+        }
+
+        .menu-link:hover{
+            background:#1e293b;
+            color:white;
+        }
+
+        .logout-btn{
+            position:absolute;
+            left:18px;
+            right:18px;
+            bottom:28px;
+        }
+
+        .content{
+            margin-left:300px;
+            padding:26px 34px;
+            transition:.3s;
+        }
+
+        .content.expandido{
+            margin-left:0;
+        }
+
+        .top-toggle{
+            position:fixed;
+            top:18px;
+            left:18px;
+            z-index:1100;
+            border:0;
+            background:#1e293b;
+            color:white;
+            border-radius:8px;
+            padding:10px 14px;
+            display:block;
+            box-shadow:0 8px 18px rgba(0,0,0,.25);
+        }
+
+        .sidebar:not(.fechado) + .content{
+            margin-left:300px;
+        }
+
+        .card-sistema{
+            background:#1e293b;
+            border-radius:22px;
+            padding:38px;
+            box-shadow:0 12px 28px rgba(0,0,0,.25);
+        }
+
+        .item-card{
+            background:#1b2d48;
+            border-radius:22px;
+            padding:26px 34px;
+            margin-bottom:20px;
+        }
+
+        .texto-muted{
+            color:#94a3b8;
+        }
+
+        .form-control, .form-select{
+            min-height:48px;
+            font-size:18px;
+        }
+
+        .btn{
+            font-size:16px;
+            font-weight:600;
+        }
+
+        .modal-content{
+            background:#1e293b;
+            color:white;
+        }
+
+        @media(max-width:900px){
+            .sidebar{
+                left:-300px;
+            }
+
+            .sidebar.aberto{
+                left:0;
+            }
+
+            .content{
+                margin-left:0;
+                padding-top:70px;
+            }
+
+            .top-toggle{
+                display:block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<button class="top-toggle" id="botaoMenu" onclick="alternarMenu()">
+    <i class="fa-solid fa-bars"></i>
+</button>
+
+<div class="sidebar" id="sidebar">
+
+    <div class="brand">
+        🌡️ RDV
+    </div>
+
+    <a href="/dashboard" class="menu-link">
+        <i class="fa-solid fa-house"></i> Início
+    </a>
+
+    {% if admin == '1' or pode_colaborador == '1' %}
+    <a href="/clientes" class="menu-link">
+        <i class="fa-solid fa-building"></i> Clientes
+    </a>
+
+    <a href="/torres" class="menu-link">
+        <i class="fa-solid fa-fan"></i> Torres
+    </a>
+
+    <a href="/novo" class="menu-link">
+        <i class="fa-solid fa-clipboard-list"></i> Novo Relatório
+    </a>
+    {% endif %}
+
+    {% if admin == '1' %}
+    <a href="/usuarios" class="menu-link">
+        <i class="fa-solid fa-users"></i> Usuários
+    </a>
+    {% endif %}
+
+    <a href="/logout" class="btn btn-danger logout-btn">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+
+</div>
+
+<div class="content" id="content">
+    {% block conteudo %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const sidebar = document.getElementById("sidebar");
+    const content = document.getElementById("content");
+    const botaoMenu = document.getElementById("botaoMenu");
+
+    function alternarMenu(){
+        if(window.innerWidth <= 900){
+            sidebar.classList.toggle("aberto");
+        } else {
+            sidebar.classList.toggle("fechado");
+            content.classList.toggle("expandido");
+        }
+    }
+
+    document.addEventListener("click", function(event){
+        if(window.innerWidth <= 900){
+            const clicouMenu = sidebar.contains(event.target);
+            const clicouBotao = botaoMenu.contains(event.target);
+
+            if(!clicouMenu && !clicouBotao){
+                sidebar.classList.remove("aberto");
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

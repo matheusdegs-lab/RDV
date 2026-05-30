@@ -1,0 +1,204 @@
+{% extends "layout.html" %}
+
+{% block conteudo %}
+
+<style>
+.historico-overlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.65);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+
+.historico-caixa{
+    background:#1e293b;
+    color:white;
+    width:90%;
+    max-width:700px;
+    max-height:80vh;
+    overflow:auto;
+    border-radius:16px;
+    padding:25px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
+.historico-item{
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:12px;
+    background:#0f172a;
+}
+
+.historico-label{
+    color:#94a3b8;
+    font-size:13px;
+}
+
+.historico-texto{
+    white-space:pre-wrap;
+    word-break:break-word;
+}
+</style>
+
+<h3>Relatórios</h3>
+
+<table class="table">
+
+<thead>
+
+<tr>
+
+<th>Número</th>
+<th>Torre</th>
+<th>Técnico</th>
+<th>Status</th>
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for r in relatorios %}
+
+<tr>
+
+<td>{{r.numero}}</td>
+
+<td>{{r.torre}}</td>
+
+<td>{{r.tecnico}}</td>
+
+<td>
+
+{% if r.status == 'FINALIZADO' %}
+<span class="badge bg-success">
+{% elif r.status == 'PENDENTE' %}
+<span class="badge bg-warning text-dark">
+{% else %}
+<span class="badge bg-primary">
+{% endif %}
+
+{{r.status}}
+
+</span>
+
+</td>
+
+<td>
+
+{% if (admin == '1' or pode_colaborador == '1') and r.status != 'FINALIZADO' %}
+<a href="/editar-relatorio/{{r.id}}" class="btn btn-warning btn-sm">
+    Editar
+</a>
+{% endif %}
+
+<a
+href="/pdf/{{r.numero}}"
+class="btn btn-primary btn-sm"
+>
+PDF
+</a>
+
+<button
+    type="button"
+    class="btn btn-secondary btn-sm"
+    onclick="abrirHistorico('historico{{r.id}}')"
+>
+    Histórico
+</button>
+
+<div id="historico{{r.id}}" style="display:none;">
+
+    <h4 class="mb-3">Histórico do relatório {{r.numero}}</h4>
+
+    {% set historicos = historicos_dict.get(r.id, []) %}
+
+    {% if historicos %}
+
+        {% for h in historicos %}
+
+        <div class="historico-item">
+
+            <div class="historico-label">Data e hora</div>
+            <div class="mb-2">{{h.data_hora}}</div>
+
+            <div class="historico-label">Usuário</div>
+            <div class="mb-2">{{h.usuario}}</div>
+
+            <div class="historico-label">Alteração</div>
+            <div class="mb-2"><strong>{{h.alteracao}}</strong></div>
+
+            <div class="historico-label">De</div>
+            <div class="historico-texto mb-2">{{h.valor_antigo}}</div>
+
+            <div class="historico-label">Para</div>
+            <div class="historico-texto">{{h.valor_novo}}</div>
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p style="color:#cbd5e1;">Nenhuma alteração registrada para este relatório.</p>
+
+    {% endif %}
+
+</div>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+<div id="historicoOverlay" class="historico-overlay">
+    <div class="historico-caixa">
+        <div id="historicoConteudo"></div>
+        <div class="text-end mt-3">
+            <button class="btn btn-light" onclick="fecharHistorico()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirHistorico(id){
+    const origem = document.getElementById(id);
+    const overlay = document.getElementById("historicoOverlay");
+    const conteudo = document.getElementById("historicoConteudo");
+
+    if(origem && overlay && conteudo){
+        conteudo.innerHTML = origem.innerHTML;
+        overlay.style.display = "flex";
+    }
+}
+
+function fecharHistorico(){
+    const overlay = document.getElementById("historicoOverlay");
+
+    if(overlay){
+        overlay.style.display = "none";
+    }
+}
+
+document.getElementById("historicoOverlay").addEventListener("click", function(e){
+    if(e.target === this){
+        fecharHistorico();
+    }
+});
+</script>
+
+{% endblock %}
