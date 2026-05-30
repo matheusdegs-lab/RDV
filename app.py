@@ -1860,6 +1860,34 @@ def salvar_relatorio(
 
     c.save()
 
+        # ====================================
+    # ENVIAR ARQUIVOS PARA SUPABASE STORAGE
+    # ====================================
+
+    for caminho_foto in caminhos_fotos:
+
+        upload_storage(
+            "fotos",
+            caminho_foto,
+            os.path.basename(caminho_foto)
+        )
+
+    if os.path.exists(caminho_assinatura):
+
+        upload_storage(
+            "assinaturas",
+            caminho_assinatura,
+            os.path.basename(caminho_assinatura)
+        )
+
+    if os.path.exists(caminho_pdf):
+
+        upload_storage(
+            "pdfs",
+            caminho_pdf,
+            os.path.basename(caminho_pdf)
+        )
+    
     return RedirectResponse(
         url="/dashboard",
         status_code=302
