@@ -2088,3 +2088,66 @@ def api_torres():
     finally:
 
         db.close()
+
+
+@app.post("/api/sync/relatorio")
+def api_sync_relatorio(
+    cliente: str = Form(...),
+    torre: str = Form(...),
+    tecnico: str = Form(...),
+    relato_visita: str = Form(""),
+    status_visita: str = Form("PENDENTE"),
+    data_criacao: str = Form(""),
+):
+
+    db = SessionLocal()
+
+    try:
+
+        total = db.query(Relatorio).count()
+        numero = total + 1
+        numero_relatorio = f"REL-{numero:03}"
+
+        if not data_criacao:
+            data_criacao = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+        texto_hash = (
+            numero_relatorio +
+            cliente +
+            torre +
+            tecnico +
+            relato_visita +
+            data_criacao
+        )
+
+        hash_relatorio = hashlib.sha256(
+            texto_hash.encode()
+        ).hexdigest()
+
+        novo = Relatorio(
+            numero=numero_relatorio,
+            cliente=cliente,
+            torre=torre,
+            tecnico=tecnico,
+            observacoes=relato_visita,
+            assinatura="",
+            foto="",
+            data_criacao=data_criacao,
+            status=status_visita,
+            hash_relatorio=hash_relatorio
+        )
+
+        db.add(novo)
+        db.commit()
+        db.refresh(novo)
+
+        return {
+            "status": "sincronizado",
+            "id": novo.id,
+            "numero": novo.numero,
+            "hash": novo.hash_relatorio
+        }
+
+    finally:
+
+        db.close()
