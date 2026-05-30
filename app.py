@@ -260,15 +260,34 @@ Base.metadata.create_all(bind=engine)
 
 def garantir_coluna(tabela, coluna, tipo):
 
-    with engine.connect() as conn:
+    # Ajuste automático de colunas antigas apenas para SQLite local.
+    # No PostgreSQL/Supabase, as colunas já são criadas pelo Base.metadata.create_all().
+    if not DATABASE_URL.startswith("sqlite"):
 
-        colunas = [linha[1] for linha in conn.exec_driver_sql(f"PRAGMA table_info({tabela})").fetchall()]
+        return
 
-        if coluna not in colunas:
+    try:
 
-            conn.exec_driver_sql(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}")
+        with engine.connect() as conn:
 
-            conn.commit()
+            colunas = [
+                linha[1]
+                for linha in conn.exec_driver_sql(
+                    f"PRAGMA table_info({tabela})"
+                ).fetchall()
+            ]
+
+            if coluna not in colunas:
+
+                conn.exec_driver_sql(
+                    f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}"
+                )
+
+                conn.commit()
+
+    except Exception as e:
+
+        print(f"Aviso: não foi possível garantir coluna {coluna} em {tabela}:", e)
 
 garantir_coluna("clientes", "ativo", "INTEGER DEFAULT 1")
 garantir_coluna("usuarios", "cliente_id", "INTEGER DEFAULT 0")
@@ -290,10 +309,10 @@ if not admin_existe:
 
     admin = Usuario(
 
-    usuario="Administrador-Geral",
+    usuario="admin",
 
     senha=pwd.hash(
-        "tOD*M1Co0v"
+        "admin123"
     ),
 
     admin=1,
