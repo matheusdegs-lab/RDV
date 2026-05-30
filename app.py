@@ -290,10 +290,10 @@ if not admin_existe:
 
     admin = Usuario(
 
-    usuario="admin",
+    usuario="Administrador-Geral",
 
     senha=pwd.hash(
-        "admin123"
+        "tOD*M1Co0v"
     ),
 
     admin=1,
