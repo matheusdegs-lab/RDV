@@ -43,6 +43,14 @@ app = FastAPI()
 # HEADERS SEM CACHE
 # =========================
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.middleware("http")
 async def disable_cache(request: Request, call_next):
 
