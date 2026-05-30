@@ -106,6 +106,43 @@ pwd = CryptContext(
     deprecated="auto"
 )
 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+supabase = None
+
+if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+    supabase = create_client(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_KEY
+    )
+
+
+def upload_storage(bucket, caminho_local, nome_destino):
+
+    if not supabase:
+        return ""
+
+    try:
+
+        with open(caminho_local, "rb") as f:
+
+            supabase.storage.from_(bucket).upload(
+                nome_destino,
+                f,
+                {"upsert": "true"}
+            )
+
+        return supabase.storage.from_(bucket).get_public_url(
+            nome_destino
+        )
+
+    except Exception as e:
+
+        print("Erro Storage:", e)
+
+        return ""
+
 # =========================
 # GET DB
 # =========================
