@@ -2113,28 +2113,11 @@ def api_sync_relatorio(
 
     try:
 
-        total = db.query(Relatorio).count()
-        numero = total + 1
-        numero_relatorio = f"REL-{numero:03}"
-
         if not data_criacao:
             data_criacao = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-        texto_hash = (
-            numero_relatorio +
-            cliente +
-            torre +
-            tecnico +
-            relato_visita +
-            data_criacao
-        )
-
-        hash_relatorio = hashlib.sha256(
-            texto_hash.encode()
-        ).hexdigest()
-
         novo = Relatorio(
-            numero=numero_relatorio,
+            numero="GERANDO",
             cliente=cliente,
             torre=torre,
             tecnico=tecnico,
@@ -2143,10 +2126,28 @@ def api_sync_relatorio(
             foto="",
             data_criacao=data_criacao,
             status=status_visita,
-            hash_relatorio=hash_relatorio
+            hash_relatorio=""
         )
 
         db.add(novo)
+        db.commit()
+        db.refresh(novo)
+
+        novo.numero = f"REL-{novo.id:06}"
+
+        texto_hash = (
+            novo.numero +
+            cliente +
+            torre +
+            tecnico +
+            relato_visita +
+            data_criacao
+        )
+
+        novo.hash_relatorio = hashlib.sha256(
+            texto_hash.encode()
+        ).hexdigest()
+
         db.commit()
         db.refresh(novo)
 
@@ -2158,5 +2159,6 @@ def api_sync_relatorio(
         }
 
     finally:
+        db.close()
 
         db.close()
