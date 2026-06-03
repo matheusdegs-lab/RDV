@@ -2205,12 +2205,11 @@ def api_clientes():
 # =========================
 
 @app.get("/api/torres/{cliente_id}")
-def api_torres(cliente_id: int):
+def api_torres_cliente(cliente_id: int):
 
     db = SessionLocal()
 
     try:
-
         torres = db.query(Torre).filter(
             Torre.cliente_id == cliente_id
         ).all()
@@ -2220,15 +2219,13 @@ def api_torres(cliente_id: int):
                 "id": t.id,
                 "nome": t.nome,
                 "numero_serie": t.numero_serie,
-                "qtd_litros": t.qtd_litros
+                "qtd_litros": t.qtd_litros,
+                "foto_perfil": t.foto_perfil
             }
             for t in torres
         ]
 
     finally:
-
-        db.close()
-
         db.close()
 
 @app.post("/api/clientes")
