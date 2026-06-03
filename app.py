@@ -10,6 +10,7 @@ from datetime import datetime
 import hashlib
 import base64
 import os
+import uuid
 import shutil
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -2320,3 +2321,34 @@ async def api_criar_torre(
 
     finally:
         db.close()
+        
+@app.post("/api/upload-assinatura")
+async def upload_assinatura(dados: dict):
+    try:
+        assinatura_base64 = dados.get("assinatura")
+
+        if not assinatura_base64:
+            return {"erro": "Assinatura não enviada"}
+
+        arquivo_bytes = base64.b64decode(assinatura_base64)
+
+        nome_arquivo = f"assinaturas/{uuid.uuid4()}.png"
+
+        supabase.storage.from_("assinaturas").upload(
+            nome_arquivo,
+            arquivo_bytes,
+            {"content-type": "image/png"}
+        )
+
+        url_publica = supabase.storage.from_("assinaturas").get_public_url(nome_arquivo)
+
+        return {
+            "sucesso": True,
+            "url": url_publica
+        }
+
+    except Exception as e:
+        return {
+            "sucesso": False,
+            "erro": str(e)
+        }
