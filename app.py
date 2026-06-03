@@ -27,6 +27,11 @@ from reportlab.pdfgen import canvas
 
 from passlib.context import CryptContext
 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY")
+
+supabase = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
+
 # =========================
 # PASTAS
 # =========================
@@ -2262,21 +2267,44 @@ def api_criar_cliente(
 
 
 @app.post("/api/torres")
-def api_criar_torre(
+async def api_criar_torre(
     nome: str = Form(...),
     cliente_id: int = Form(...),
     numero_serie: str = Form(""),
-    qtd_litros: str = Form("")
+    qtd_litros: str = Form(""),
+    foto: UploadFile = File(None)
 ):
     db = SessionLocal()
 
     try:
+        foto_url = ""
+
+        if foto:
+            conteudo = await foto.read()
+
+            extensao = os.path.splitext(foto.filename)[1]
+            if extensao == "":
+                extensao = ".jpg"
+
+            nome_arquivo = f"torre_{cliente_id}_{int(datetime.now().timestamp())}{extensao}"
+            caminho_storage = f"torres/{nome_arquivo}"
+
+            supabase.storage.from_("fotos").upload(
+                caminho_storage,
+                conteudo,
+                {
+                    "content-type": foto.content_type or "image/jpeg"
+                }
+            )
+
+            foto_url = supabase.storage.from_("fotos").get_public_url(caminho_storage)
+
         nova = Torre(
             nome=nome,
             cliente_id=cliente_id,
             numero_serie=numero_serie,
             qtd_litros=qtd_litros,
-            foto_perfil=""
+            foto_perfil=foto_url
         )
 
         db.add(nova)
@@ -2289,7 +2317,8 @@ def api_criar_torre(
             "nome": nova.nome,
             "cliente_id": nova.cliente_id,
             "numero_serie": nova.numero_serie,
-            "qtd_litros": nova.qtd_litros
+            "qtd_litros": nova.qtd_litros,
+            "foto_perfil": nova.foto_perfil
         }
 
     finally:
