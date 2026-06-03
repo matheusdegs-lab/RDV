@@ -2352,3 +2352,34 @@ async def upload_assinatura(dados: dict):
             "sucesso": False,
             "erro": str(e)
         }
+
+@app.post("/api/upload-pdf")
+async def upload_pdf(dados: dict):
+    try:
+        pdf_base64 = dados.get("pdf")
+
+        if not pdf_base64:
+            return {"erro": "PDF não enviado"}
+
+        arquivo_bytes = base64.b64decode(pdf_base64)
+
+        nome_arquivo = f"pdfs/{uuid.uuid4()}.pdf"
+
+        supabase.storage.from_("pdfs").upload(
+            nome_arquivo,
+            arquivo_bytes,
+            {"content-type": "application/pdf"}
+        )
+
+        url_publica = supabase.storage.from_("pdfs").get_public_url(nome_arquivo)
+
+        return {
+            "sucesso": True,
+            "url": url_publica
+        }
+
+    except Exception as e:
+        return {
+            "sucesso": False,
+            "erro": str(e)
+        }
