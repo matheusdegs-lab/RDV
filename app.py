@@ -2223,3 +2223,72 @@ def api_torres(cliente_id: int):
         db.close()
 
         db.close()
+
+@app.post("/api/clientes")
+def api_criar_cliente(
+    nome: str = Form(...),
+    telefone: str = Form(""),
+    cnpj: str = Form(""),
+    endereco: str = Form("")
+):
+    db = SessionLocal()
+
+    try:
+        novo = Cliente(
+            nome=nome,
+            telefone=telefone,
+            cnpj=cnpj,
+            endereco=endereco,
+            ativo=1
+        )
+
+        db.add(novo)
+        db.commit()
+        db.refresh(novo)
+
+        return {
+            "status": "cliente_criado",
+            "id": novo.id,
+            "nome": novo.nome,
+            "telefone": novo.telefone,
+            "cnpj": novo.cnpj,
+            "endereco": novo.endereco
+        }
+
+    finally:
+        db.close()
+
+
+@app.post("/api/torres")
+def api_criar_torre(
+    nome: str = Form(...),
+    cliente_id: int = Form(...),
+    numero_serie: str = Form(""),
+    qtd_litros: str = Form("")
+):
+    db = SessionLocal()
+
+    try:
+        nova = Torre(
+            nome=nome,
+            cliente_id=cliente_id,
+            numero_serie=numero_serie,
+            qtd_litros=qtd_litros,
+            foto_perfil=""
+        )
+
+        db.add(nova)
+        db.commit()
+        db.refresh(nova)
+
+        return {
+            "status": "torre_criada",
+            "id": nova.id,
+            "nome": nova.nome,
+            "cliente_id": nova.cliente_id,
+            "numero_serie": nova.numero_serie,
+            "qtd_litros": nova.qtd_litros
+        }
+
+    finally:
+        db.close()
