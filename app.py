@@ -10,6 +10,7 @@ from datetime import datetime
 import hashlib
 import base64
 import os
+import shutil
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from supabase import create_client
@@ -32,6 +33,7 @@ from passlib.context import CryptContext
 
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("pdfs", exist_ok=True)
+os.makedirs("uploads/torres", exist_ok=True)
 
 # =========================
 # APP
