@@ -2161,4 +2161,65 @@ def api_sync_relatorio(
     finally:
         db.close()
 
+
+# =========================
+# API CLIENTES
+# =========================
+
+@app.get("/api/clientes")
+def api_clientes():
+
+    db = SessionLocal()
+
+    try:
+
+        clientes = db.query(Cliente).filter(
+            Cliente.ativo == 1
+        ).all()
+
+        return [
+            {
+                "id": c.id,
+                "nome": c.nome,
+                "cnpj": c.cnpj,
+                "endereco": c.endereco,
+                "telefone": c.telefone
+            }
+            for c in clientes
+        ]
+
+    finally:
+
+        db.close()
+
+
+# =========================
+# API TORRES
+# =========================
+
+@app.get("/api/torres/{cliente_id}")
+def api_torres(cliente_id: int):
+
+    db = SessionLocal()
+
+    try:
+
+        torres = db.query(Torre).filter(
+            Torre.cliente_id == cliente_id
+        ).all()
+
+        return [
+            {
+                "id": t.id,
+                "nome": t.nome,
+                "numero_serie": t.numero_serie,
+                "qtd_litros": t.qtd_litros
+            }
+            for t in torres
+        ]
+
+    finally:
+
+        db.close()
+
         db.close()
