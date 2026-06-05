@@ -2383,3 +2383,40 @@ async def upload_pdf(dados: dict):
             "sucesso": False,
             "erro": str(e)
         }
+
+@app.put("/api/relatorios/{relatorio_id}")
+def api_editar_relatorio(
+    relatorio_id: int,
+    tecnico: str = Form(""),
+    relato_visita: str = Form(""),
+    status_visita: str = Form("PENDENTE"),
+):
+    db = SessionLocal()
+
+    try:
+        relatorio = db.query(Relatorio).filter(
+            Relatorio.id == relatorio_id
+        ).first()
+
+        if not relatorio:
+            return {"sucesso": False, "erro": "Relatório não encontrado"}
+
+        if relatorio.status == "FINALIZADO":
+            return {"sucesso": False, "erro": "Relatório finalizado não pode ser editado"}
+
+        relatorio.tecnico = tecnico
+        relatorio.observacoes = relato_visita
+        relatorio.status = status_visita
+
+        db.commit()
+        db.refresh(relatorio)
+
+        return {
+            "sucesso": True,
+            "id": relatorio.id,
+            "numero": relatorio.numero,
+            "status": relatorio.status
+        }
+
+    finally:
+        db.close()
