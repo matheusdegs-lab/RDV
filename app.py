@@ -2420,3 +2420,28 @@ def api_editar_relatorio(
 
     finally:
         db.close()
+
+@app.get("/api/relatorios")
+def api_relatorios():
+    db = SessionLocal()
+
+    try:
+        relatorios = db.query(Relatorio).order_by(Relatorio.id.desc()).all()
+
+        return [
+            {
+                "id": r.id,
+                "numero": r.numero,
+                "cliente": r.cliente,
+                "torre": r.torre,
+                "tecnico": r.tecnico,
+                "relato": r.observacoes,
+                "status": r.status,
+                "data_salvamento": r.data_criacao,
+                "pdf_url": getattr(r, "pdf_url", "")
+            }
+            for r in relatorios
+        ]
+
+    finally:
+        db.close()
