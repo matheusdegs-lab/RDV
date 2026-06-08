@@ -1064,13 +1064,13 @@ def salvar_torre(
     foto_perfil.filename
     )
 
-        nome_foto = f"torre_{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
+    nome_foto = f"torre_{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
 
-        caminho_foto = f"uploads/{nome_foto}"
+    caminho_foto = f"uploads/{nome_foto}"
 
-        with open(caminho_foto, "wb") as buffer:
+    with open(caminho_foto, "wb") as buffer:
 
-            buffer.write(foto_perfil.file.read())
+        buffer.write(foto_perfil.file.read())
 
     torre = Torre(
 
