@@ -205,6 +205,27 @@ def get_db():
     finally:
 
         db.close()
+
+ALLOWED_EXTENSIONS = {
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "pdf"
+}
+
+def validar_arquivo(nome):
+
+    extensao = nome.split(".")[-1].lower()
+
+    if extensao not in ALLOWED_EXTENSIONS:
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Arquivo não permitido: {extensao}"
+        )
+
+    return extensao
         
         
 def criar_token(dados: dict):
@@ -1035,9 +1056,13 @@ def salvar_torre(
 
     nome_foto = ""
 
-    if foto_perfil and foto_perfil.filename:
+    extensao = validar_arquivo(
+    foto_perfil.filename
+    )
 
-        extensao = foto_perfil.filename.split(".")[-1]
+        extensao = validar_arquivo(
+    foto_perfil.filename
+    )
 
         nome_foto = f"torre_{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
 
@@ -1092,7 +1117,9 @@ def editar_torre(
         torre.numero_serie = numero_serie
         torre.qtd_litros = qtd_litros
 
-        if foto_perfil and foto_perfil.filename:
+        extensao = validar_arquivo(
+    foto_perfil.filename
+)
 
             extensao = foto_perfil.filename.split(".")[-1]
 
