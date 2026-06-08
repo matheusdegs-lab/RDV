@@ -17,6 +17,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from supabase import create_client
 
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -107,9 +108,9 @@ else:
 
     engine = create_engine(
         DATABASE_URL,
-        pool_pre_ping=True
+        pool_pre_ping=True,
+        poolclass=NullPool
     )
-
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
