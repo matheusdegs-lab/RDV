@@ -6,6 +6,12 @@ from fastapi.templating import Jinja2Templates
 from reportlab.lib.utils import simpleSplit, ImageReader
 from reportlab.lib.pagesizes import A4
 
+from datetime import datetime, timedelta
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from passlib.context import CryptContext
+import jwt
+
 from datetime import datetime
 import hashlib
 import base64
@@ -32,7 +38,10 @@ from passlib.context import CryptContext
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY")
 
-supabase = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
+supabase = None
+
+if SUPABASE_URL and SUPABASE_SECRET_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
 # =========================
 # PASTAS
@@ -126,6 +135,24 @@ pwd = CryptContext(
     deprecated="auto"
 )
 
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "troque_essa_chave_por_uma_bem_grande"
+)
+
+ALGORITHM = "HS256"
+
+ACCESS_TOKEN_EXPIRE_MINUTES = 480
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/api/login"
+)
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
@@ -178,6 +205,48 @@ def get_db():
     finally:
 
         db.close()
+        
+        
+def criar_token(dados: dict):
+    dados_token = dados.copy()
+    expira = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    dados_token.update({"exp": expira})
+
+    return jwt.encode(
+        dados_token,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+
+def usuario_atual_api(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        usuario_id = payload.get("sub")
+
+        if usuario_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        db = SessionLocal()
+
+        usuario = db.query(Usuario).filter(
+            Usuario.id == int(usuario_id)
+        ).first()
+
+        db.close()
+
+        if not usuario or usuario.ativo != 1:
+            raise HTTPException(status_code=401, detail="Usuário inválido")
+
+        return usuario
+
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
 
 # =========================
 # TABELA USUÁRIOS
@@ -583,11 +652,45 @@ def login(
         status_code=302
     )
 
-    response.set_cookie("usuario", usuario_db.usuario)
-    response.set_cookie("admin", str(usuario_db.admin))
-    response.set_cookie("pode_clientes", str(usuario_db.pode_clientes))
-    response.set_cookie("pode_colaborador", str(usuario_db.pode_colaborador))
-    response.set_cookie("cliente_id", str(usuario_db.cliente_id or 0))
+    response.set_cookie(
+        "usuario",
+        usuario_db.usuario,
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+    )
+
+    response.set_cookie(
+        "admin",
+        str(usuario_db.admin),
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+    )
+
+    response.set_cookie(
+        "pode_clientes",
+        str(usuario_db.pode_clientes),
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+    )
+
+    response.set_cookie(
+        "pode_colaborador",
+        str(usuario_db.pode_colaborador),
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+    )
+
+    response.set_cookie(
+        "cliente_id",
+        str(usuario_db.cliente_id or 0),
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+    )
 
     db.close()
 
@@ -2047,6 +2150,58 @@ def visualizar_pdf(numero: str):
 # API PARA APP MOBILE
 # =========================
 
+from fastapi.security import OAuth2PasswordRequestForm
+
+@app.post("/api/login")
+def api_login(
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
+
+    db = SessionLocal()
+
+    try:
+
+        usuario_db = db.query(Usuario).filter(
+            Usuario.usuario == form_data.username
+        ).first()
+
+        if not usuario_db:
+            raise HTTPException(
+                status_code=401,
+                detail="Usuário ou senha inválidos"
+            )
+
+        if usuario_db.ativo != 1:
+            raise HTTPException(
+                status_code=401,
+                detail="Usuário desativado"
+            )
+
+        senha_correta = pwd.verify(
+            form_data.password[:72],
+            usuario_db.senha
+        )
+
+        if not senha_correta:
+            raise HTTPException(
+                status_code=401,
+                detail="Usuário ou senha inválidos"
+            )
+
+        token = criar_token({
+            "sub": str(usuario_db.id),
+            "usuario": usuario_db.usuario
+        })
+
+        return {
+            "access_token": token,
+            "token_type": "bearer"
+        }
+
+    finally:
+
+        db.close()
+
 @app.get("/api/status")
 def api_status():
 
@@ -2058,7 +2213,9 @@ def api_status():
 
 
 @app.get("/api/clientes")
-def api_clientes():
+def api_clientes(
+    usuario_logado = Depends(usuario_atual_api)
+):
 
     db = SessionLocal()
 
@@ -2085,7 +2242,9 @@ def api_clientes():
 
 
 @app.get("/api/torres")
-def api_torres():
+def api_torres(
+    usuario_logado = Depends(usuario_atual_api)
+):
 
     db = SessionLocal()
 
@@ -2112,6 +2271,8 @@ def api_torres():
 
 @app.post("/api/sync/relatorio")
 def api_sync_relatorio(
+    usuario_logado = Depends(usuario_atual_api),
+        
     cliente: str = Form(...),
     torre: str = Form(...),
     tecnico: str = Form(...),
@@ -2178,7 +2339,9 @@ def api_sync_relatorio(
 # =========================
 
 @app.get("/api/clientes")
-def api_clientes():
+def api_clientes(
+    usuario_logado = Depends(usuario_atual_api)
+):
 
     db = SessionLocal()
 
@@ -2209,8 +2372,10 @@ def api_clientes():
 # =========================
 
 @app.get("/api/torres/{cliente_id}")
-def api_torres_cliente(cliente_id: int):
-
+def api_torres_cliente(
+    cliente_id: int,
+    usuario_logado = Depends(usuario_atual_api)
+):
     db = SessionLocal()
 
     try:
@@ -2234,6 +2399,8 @@ def api_torres_cliente(cliente_id: int):
 
 @app.post("/api/clientes")
 def api_criar_cliente(
+    usuario_logado = Depends(usuario_atual_api),
+    
     nome: str = Form(...),
     telefone: str = Form(""),
     cnpj: str = Form(""),
@@ -2269,6 +2436,8 @@ def api_criar_cliente(
 
 @app.post("/api/torres")
 async def api_criar_torre(
+    usuario_logado = Depends(usuario_atual_api),
+    
     nome: str = Form(...),
     cliente_id: int = Form(...),
     numero_serie: str = Form(""),
@@ -2425,7 +2594,9 @@ def api_editar_relatorio(
         db.close()
 
 @app.get("/api/relatorios")
-def api_relatorios():
+def api_relatorios(
+    usuario_logado = Depends(usuario_atual_api)
+):
     db = SessionLocal()
 
     try:
