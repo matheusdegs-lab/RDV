@@ -1056,24 +1056,21 @@ def salvar_torre(
 
     nome_foto = ""
 
-    extensao = validar_arquivo(
-    foto_perfil.filename
-    )
+    if foto_perfil and foto_perfil.filename:
 
-    extensao = validar_arquivo(
-    foto_perfil.filename
-    )
+        extensao = validar_arquivo(
+            foto_perfil.filename
+        )
 
-    nome_foto = f"torre_{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
+        nome_foto = f"torre_{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
 
-    caminho_foto = f"uploads/{nome_foto}"
+        caminho_foto = f"uploads/{nome_foto}"
 
-    with open(caminho_foto, "wb") as buffer:
+        with open(caminho_foto, "wb") as buffer:
 
-        buffer.write(foto_perfil.file.read())
+            buffer.write(foto_perfil.file.read())
 
     torre = Torre(
-
         nome=nome,
         cliente_id=cliente_id,
         numero_serie=numero_serie,
@@ -1082,15 +1079,14 @@ def salvar_torre(
     )
 
     db.add(torre)
-
     db.commit()
-
     db.close()
 
     return RedirectResponse(
         url="/torres",
         status_code=302
     )
+
 
 @app.post("/editar_torre/{torre_id}")
 def editar_torre(
@@ -1117,11 +1113,11 @@ def editar_torre(
         torre.numero_serie = numero_serie
         torre.qtd_litros = qtd_litros
 
-        extensao = validar_arquivo(
-        foto_perfil.filename
-        )
+        if foto_perfil and foto_perfil.filename:
 
-            extensao = foto_perfil.filename.split(".")[-1]
+            extensao = validar_arquivo(
+                foto_perfil.filename
+            )
 
             nome_foto = f"torre_{torre_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{extensao}"
 
@@ -1141,7 +1137,6 @@ def editar_torre(
         url="/torres",
         status_code=302
     )
-
 # =========================
 # USUÁRIOS
 # =========================
