@@ -1060,7 +1060,7 @@ def salvar_torre(
     foto_perfil.filename
     )
 
-        extensao = validar_arquivo(
+    extensao = validar_arquivo(
     foto_perfil.filename
     )
 
@@ -1118,8 +1118,8 @@ def editar_torre(
         torre.qtd_litros = qtd_litros
 
         extensao = validar_arquivo(
-    foto_perfil.filename
-)
+        foto_perfil.filename
+        )
 
             extensao = foto_perfil.filename.split(".")[-1]
 
